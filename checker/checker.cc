@@ -1,0 +1,214 @@
+#include "common.h"
+
+using namespace std;
+string ans_filename, data_filename, cs_filename, query_filename;
+
+void checkfile(ifstream &ansf, ifstream &dataf, ifstream &csf, ifstream &queryf){
+  
+  if (!ansf.is_open()) {
+    std::cout << "Answer File " << ans_filename << " not found!\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  if (!dataf.is_open()) {
+    std::cout << "Answer File " << ans_filename << " not found!\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  if (!csf.is_open()) {
+    std::cout << "Answer File " << cs_filename << " not found!\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  if (!queryf.is_open()) {
+    std::cout << "Answer File " << query_filename << " not found!\n";
+    exit(EXIT_FAILURE);
+  }
+}
+
+void getcs(ifstream &csf, vector<vector<Vertex>> &cs, size_t &cs_total_vertex, vector<size_t> &cs_versize){
+  char type;
+  csf >> type >> cs_total_vertex;
+  cs.resize(cs_total_vertex);
+
+  for(size_t i=0; i<cs_total_vertex; i++){
+    Vertex v;
+    cs_versize.resize(cs_total_vertex);
+    csf >> v >> cs_versize[i];
+    cs[i].resize(cs_versize[i]);
+    for(size_t j=0; j < cs_versize[i]; j++)
+      csf >> cs[i][j];        
+  }
+
+  csf.close();
+}
+
+void getans(ifstream &ansf, vector<vector<Vertex>> &ans, size_t &ans_total_vertex, int &ans_num){
+  char type;
+  ansf >> type >> ans_total_vertex;
+  if(type != 't') exit(1);
+
+  while(ansf >> type){
+      ans.resize(ans_num+1);
+      ans[ans_num].resize(ans_total_vertex);
+      for(size_t i=0; i<ans_total_vertex; i++){
+        ansf >> ans[ans_num][i];
+      }
+      ans_num++;
+    }
+    ansf.close();
+}
+
+void getquery(ifstream &queryf, size_t &num_vertices, vector<Label> &label_, set<Label> &label_set, vector<vector<Vertex>> &adj_list){
+  char type;
+  int graph_id_;
+  queryf >> type >> graph_id_ >> num_vertices;
+  adj_list.resize(num_vertices);
+  while (queryf >> type) {
+    if (type == 'v') {
+      Vertex id;
+      Label l;
+      queryf >> id >> l;
+      label_[id] = l;
+      label_set.insert(l);
+    } else if (type == 'e') {
+      Vertex v1, v2;
+      Label l;
+      queryf >> v1 >> v2 >> l;
+      adj_list[v1].push_back(v2);
+      adj_list[v2].push_back(v1);
+    }
+  }
+  queryf.close();
+}
+
+void getdata(ifstream &dataf, size_t &num_vertices, vector<Label> &label_, set<Label> &label_set, vector<vector<Vertex>> &adj_list){
+  char type;
+  int graph_id_;
+  dataf >> type >> graph_id_ >> num_vertices;
+  adj_list.resize(num_vertices);
+  cout << "num" << num_vertices << endl;
+  while (dataf >> type) {
+    if (type == 'v') {
+      Vertex id;
+      Label l;
+      dataf >> id >> l;
+      
+      label_[id] = l;
+      label_set.insert(l);
+    } else if (type == 'e') {
+      Vertex v1, v2;
+      Label l;
+      dataf >> v1 >> v2 >> l;
+
+      adj_list[v1].push_back(v2);
+      adj_list[v2].push_back(v1);
+    }
+  }
+  dataf.close();
+}
+
+int main(){
+  ans_filename = "../mygraph/answer.igraph";
+  data_filename = "../mygraph/answer.igraph";
+  cs_filename = "../mygraph/candidate.igraph";
+  query_filename = "../mygraph/query.igraph";
+
+  ifstream ansf(ans_filename), dataf(data_filename), csf(cs_filename), queryf(query_filename);
+  checkfile(ansf, dataf, csf, queryf);
+
+  cout << "file checked" << endl;
+
+  char type;
+  size_t ans_total_vertex, cs_total_vertex;
+  vector<vector<Vertex>> ans;
+  int ans_num=0;
+  getans(ansf, ans, ans_total_vertex, ans_num);
+
+  cout << "ans checked" << endl;
+
+  vector<vector<Vertex>> cs;
+  vector<size_t> cs_versize;
+  getcs(csf, cs, cs_total_vertex, cs_versize);
+  
+  cout << "cs checked" << endl;
+  
+  size_t query_num_vertices;
+  vector<Label> query_label_(ans_total_vertex);
+  set<Label> query_label_set;
+  vector<vector<Vertex>> query_adj_list(ans_total_vertex);
+  getquery(queryf, query_num_vertices, query_label_, query_label_set, query_adj_list);
+  
+  cout << "query checked" << endl;
+  
+  size_t data_num_vertices;
+  vector<Label> data_label_;
+  set<Label> data_label_set;
+  vector<vector<Vertex>> data_adj_list;
+  getdata(dataf, data_num_vertices, data_label_, data_label_set, data_adj_list);  
+
+  
+  cout << "data checked" << endl;
+  
+  if(ans_total_vertex != cs_total_vertex || ans_total_vertex != query_num_vertices) {
+    cout << "vertices number not the same ";
+    exit(1);
+  }
+
+  
+  cout << "vertex number checked" << endl;
+
+  for(int i=0; i<ans_num; i++){
+    //check one-to-one
+    for(int j=0; j<ans_total_vertex; j++){
+      for(int k=0; k<ans_total_vertex; k++){
+        if(k!=j && ans[i][j] == ans[i][k]) {
+          cout << "answer is not one-to-one";
+          exit(2);
+        }
+      }
+    }
+    //check edges connected
+    for(Vertex u=0; u<ans_total_vertex; u++){
+      //query-edge(u, v) && cs-edge(u, v)
+      //for each vertex, check the edge
+      for(int k=0; k<query_adj_list[u].size(); k++){  //u-v
+        Vertex v = query_adj_list[u][k];
+        Vertex cs_u = ans[i][u];
+        Vertex cs_v = ans[i][v];
+    cout << "2" << endl;
+
+    cout << "3" << endl;
+        bool flag = false;
+    cout << "4" << endl;
+    cout << cs_u << " " << cs_v << endl;
+    cout << "hi: " <<  data_adj_list[cs_u].size() << endl;
+        for(int j=0; j<data_adj_list[cs_u].size(); j++){
+    cout << "5" << endl;
+          if(j == cs_v) flag = true;
+        }
+    cout << "6" << endl;
+        if(!flag) {
+          cout << "there is no edge in the graph one-to-one ";
+          exit(3);
+        }
+      }
+    }
+    cout << "4" << endl;
+
+    //check label? -> cs
+    for(int j=0; j<ans_total_vertex; j++){
+      bool flag = false;
+      for(int k=0; k<cs_versize[j]; k++)
+        if(k == ans[i][j]) flag = true;
+
+      if(!flag) {
+        cout << "answer is not in the cs ";
+        exit(4);
+      }
+    }
+  }
+  cout << "well done!"<< endl;
+  return 0;
+
+}
