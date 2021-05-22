@@ -34,10 +34,10 @@ void getcs(ifstream &csf, vector<vector<Vertex>> &cs, size_t &cs_total_vertex, v
   for(size_t i=0; i<cs_total_vertex; i++){
     Vertex v;
     cs_versize.resize(cs_total_vertex);
-    csf >> v >> cs_versize[i];
+    csf >> type >> v >> cs_versize[i];
     cs[i].resize(cs_versize[i]);
     for(size_t j=0; j < cs_versize[i]; j++)
-      csf >> cs[i][j];        
+      csf >> cs[v][j];        
   }
 
   csf.close();
@@ -86,14 +86,13 @@ void getdata(ifstream &dataf, size_t &num_vertices, vector<Label> &label_, set<L
   char type;
   int graph_id_;
   dataf >> type >> graph_id_ >> num_vertices;
-  adj_list.resize(num_vertices);
-  cout << "num" << num_vertices << endl;
+  adj_list.resize(num_vertices+1);
+  label_.resize(num_vertices);
   while (dataf >> type) {
     if (type == 'v') {
       Vertex id;
       Label l;
       dataf >> id >> l;
-      
       label_[id] = l;
       label_set.insert(l);
     } else if (type == 'e') {
@@ -110,7 +109,7 @@ void getdata(ifstream &dataf, size_t &num_vertices, vector<Label> &label_, set<L
 
 int main(){
   ans_filename = "../mygraph/answer.igraph";
-  data_filename = "../mygraph/answer.igraph";
+  data_filename = "../mygraph/graph.igraph";
   cs_filename = "../mygraph/candidate.igraph";
   query_filename = "../mygraph/query.igraph";
 
@@ -176,34 +175,27 @@ int main(){
         Vertex v = query_adj_list[u][k];
         Vertex cs_u = ans[i][u];
         Vertex cs_v = ans[i][v];
-    cout << "2" << endl;
-
-    cout << "3" << endl;
         bool flag = false;
-    cout << "4" << endl;
-    cout << cs_u << " " << cs_v << endl;
-    cout << "hi: " <<  data_adj_list[cs_u].size() << endl;
         for(int j=0; j<data_adj_list[cs_u].size(); j++){
-    cout << "5" << endl;
-          if(j == cs_v) flag = true;
+          if(data_adj_list[cs_u][j] == cs_v) flag = true;
         }
-    cout << "6" << endl;
         if(!flag) {
-          cout << "there is no edge in the graph one-to-one ";
+          cout << "there is no edge in the graph one-to-one " << endl;
+          cout << "query:" << u <<" " << v << " " << "data" << cs_u << " " << cs_v << endl;
           exit(3);
         }
       }
     }
-    cout << "4" << endl;
 
     //check label? -> cs
     for(int j=0; j<ans_total_vertex; j++){
       bool flag = false;
-      for(int k=0; k<cs_versize[j]; k++)
-        if(k == ans[i][j]) flag = true;
+      for(int k=0; k<cs_versize[j]; k++){
+        if(cs[j][k] == ans[i][j]) flag = true;
+      }
 
       if(!flag) {
-        cout << "answer is not in the cs ";
+        cout << "answer " << i << "of vertex" << j << " is not in the cs ";
         exit(4);
       }
     }
