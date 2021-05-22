@@ -6,14 +6,14 @@ mkdir build
 cd build
 cmake ..
 make
-./checker
+./checker/checker
 ```
 
 INPUT: ans_filename, data_filename, cs_filename, query_filename
-OUTPUT: if 
+OUTPUT: if right, "well done", else, prints out error
 
-NEEDTO: file path if needed
+NEEDTO: modify file path if needed
 
-check format, cs and query graph
+check 
 
-same label, exist edge, one-to-one
+chekc: format, same label, exist edge, one-to-one
