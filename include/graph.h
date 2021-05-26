@@ -194,4 +194,28 @@ inline bool Graph::IsNeighbor(Vertex u, Vertex v) const {
          offset < GetNeighborEndOffset(u, GetLabel(v)) && *it == v;
 }
 
+class Tree {
+public:
+    size_t parent_count_;
+    Vertex* parent_;
+    size_t level_;
+    size_t children_count_;
+    size_t visted_parent;
+    Vertex* children_;
+public:
+    Tree() {
+        parent_count_ = 0;
+        parent_ = NULL;
+        level_ = 0;
+        children_ = NULL;
+        children_count_ = 0;
+        visted_parent = 0;
+    }
+
+    void initialize(const size_t size) {
+        children_ = new Vertex[size];
+        parent_ = new Vertex[size];
+    }
+};
+
 #endif  // GRAPH_H_
