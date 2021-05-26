@@ -107,11 +107,24 @@ void getdata(ifstream &dataf, size_t &num_vertices, vector<Label> &label_, set<L
   dataf.close();
 }
 
-int main(){
-  ans_filename = "../mygraph/answer.igraph";
-  data_filename = "../mygraph/graph.igraph";
-  cs_filename = "../mygraph/candidate.igraph";
-  query_filename = "../mygraph/query.igraph";
+int main(int argc, char* argv[]){
+  std::string file = argv[1];
+  std::string ans_filename="../build/", data_filename="../build/", cs_filename="../build/", query_filename="../build/";
+
+  ans_filename.append(file);
+  cs_filename.append(file);
+  query_filename.append(file);
+
+  file.pop_back();2
+  file.pop_back();
+  file.pop_back();
+  data_filename.append(file);
+
+  ans_filename.append("_output.txt");
+  cs_filename.append(".cs");
+  query_filename.append(".igraph");
+  data_filename.append(".igraph");
+
 
   ifstream ansf(ans_filename), dataf(data_filename), csf(cs_filename), queryf(query_filename);
   checkfile(ansf, dataf, csf, queryf);
