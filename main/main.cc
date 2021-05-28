@@ -24,8 +24,12 @@ int main(int argc, char* argv[]) {
   CandidateSet candidate_set(candidate_set_file_name);
 
   Backtrack backtrack;
-
+  
+   time_t start = time(NULL);
   backtrack.PrintAllMatches(query_file_name, data, query, candidate_set);
+   time_t end = time(NULL);
 
+  double time = (double)(end - start);
+  std::cout << time << std::endl;
   return EXIT_SUCCESS;
 }

@@ -115,7 +115,7 @@ int main(int argc, char* argv[]){
   cs_filename.append(file);
   query_filename.append(file);
 
-  file.pop_back();2
+  file.pop_back();
   file.pop_back();
   file.pop_back();
   data_filename.append(file);

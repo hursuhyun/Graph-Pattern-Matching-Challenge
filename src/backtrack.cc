@@ -195,6 +195,8 @@ void Backtracking(std::string filename, std::vector<Vertex> matchingOrder, const
     }
   }
 
+  std::cout << "count: " << cnt << std::endl;
+
   return;
 }
 
