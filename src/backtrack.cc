@@ -132,26 +132,22 @@ std::vector<Vertex> FindingMatchingOrder(Vertex u, const Graph &data, const Grap
       }
     }
 
-    //TODO: when RI is same?
     if(ex_index == 0) break;
-    Vertex max_ri_vertex = extendable_vertex_order[ex_index-1];
-    size_t max_ri = tree[max_ri_vertex].parent_count_;
-    size_t max_ri_index=ex_index-1;
-
-    for(int j=0; j<ex_index-1; j++){
-      Vertex v = extendable_vertex_order[j];
-      if(max_ri < tree[v].parent_count_) {
-        max_ri = tree[v].parent_count_;
-        max_ri_vertex = v; 
-        max_ri_index = j;
+    Vertex max_candidate = extendable_vertex_order[ex_index-1] ;
+    size_t max_cs = c.GetCandidateSize(max_candidate);
+    size_t max_index =ex_index-1;
+    for(int j = 0; j < ex_index-1; j++){
+      Vertex can = extendable_vertex_order[j];
+      if(max_cs < c.GetCandidateSize(can) ){
+        max_candidate = can;
+        max_cs = c.GetCandidateSize(can);
+        max_index = j;
       }
     }
-    //u = max_ri_vertex;
-    //modify from here
-    extendable_vertex_order[max_ri_index] = extendable_vertex_order[ex_index-1];
-    ex_index--;
 
-    u=max_ri_vertex;
+    extendable_vertex_order[max_index] = extendable_vertex_order[ex_index-1] ;
+    ex_index --;
+    u=max_candidate;
   }
 
   return matchingOrder;
@@ -232,6 +228,8 @@ void Backtracking(std::string filename, std::vector<Vertex> matchingOrder, const
       j--;
     }
   }
+
+  cout << "count: " <<  cnt << endl;
 
   return;
 }
