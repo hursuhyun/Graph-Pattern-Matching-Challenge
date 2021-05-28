@@ -4,6 +4,7 @@
  */
 
 #include "backtrack.h"
+#include <stdio.h>
 using namespace std;
 Backtrack::Backtrack() {}
 Backtrack::~Backtrack() {}
@@ -101,9 +102,146 @@ Vertex Backtrack::GetRootVertex(const Graph &data, const Graph &query) {
 }
 */
 
-void Backtrack::PrintAllMatches(const Graph &data, const Graph &query,
+std::vector<Vertex> FindingMatchingOrder(Vertex u, const Graph &data, const Graph &query,
+                                const CandidateSet &c, Tree *&tree) {
+  /**
+   * finding out the order of matching
+   * neighborSize : number of neighbors within matched vertices
+   * matchingOrder : order of matching
+   * extendableVertex : extendable vertices from matched ones
+   * one : vertex with candidate size of one, if any
+   */
+  
+  size_t query_vertex_num = query.GetNumVertices();
+
+  vector<bool> visited(query_vertex_num, false);
+  queue<Vertex> extendable_queue;
+  vector<size_t> extendable_vertex_order(query_vertex_num); //extendable_vertex_order[ith] = u means u is ith number in extendable list
+  size_t ex_index = 0 ;
+
+  std::vector<Vertex> matchingOrder(query_vertex_num);
+  for(size_t i = 0; i < query_vertex_num; i++){
+    matchingOrder[i] = u;
+    for(size_t j = 0; j < tree[u].children_count_; j++){
+      Vertex child = tree[u].children_[j];
+      tree[child].visted_parent++;
+
+      if(!visited[child] && tree[child].visted_parent == tree[child].parent_count_){
+        extendable_vertex_order[ex_index++] =child;
+        visited[child] = true;
+      }
+    }
+
+    //TODO: when RI is same?
+    if(ex_index == 0) break;
+    Vertex max_ri_vertex = extendable_vertex_order[ex_index-1];
+    size_t max_ri = tree[max_ri_vertex].parent_count_;
+    size_t max_ri_index=ex_index-1;
+
+    for(int j=0; j<ex_index-1; j++){
+      Vertex v = extendable_vertex_order[j];
+      if(max_ri < tree[v].parent_count_) {
+        max_ri = tree[v].parent_count_;
+        max_ri_vertex = v; 
+        max_ri_index = j;
+      }
+    }
+    //u = max_ri_vertex;
+    //modify from here
+    extendable_vertex_order[max_ri_index] = extendable_vertex_order[ex_index-1];
+    ex_index--;
+
+    u=max_ri_vertex;
+  }
+
+  return matchingOrder;
+
+}
+
+
+void Backtracking(std::string filename, std::vector<Vertex> matchingOrder, const Graph &data, const Graph &query,
                                 const CandidateSet &cs) {
-  std::cout << "t " << query.GetNumVertices() << "\n";
+  std::ofstream out(filename);
+  
+  out<<"t "<<query.GetNumVertices()<<std::endl;
+
+  bool is_answer = true; 
+  std::vector<Vertex> answer;
+  std::vector<size_t> triedCandidate;
+  int32_t query_size = query.GetNumVertices();
+
+  answer.resize(query_size, 0);
+  triedCandidate.resize(query_size, 0);
+
+  int j=0;
+  Vertex current;
+  Vertex currCandidate;
+  int cnt=0;
+
+  while (j > -1 && cnt < 100000) {
+
+    current = matchingOrder[j];
+
+    // check if there is untried candidate of current vertex in query
+    if (triedCandidate[current] < cs.GetCandidateSize(current)) {
+      
+      currCandidate = cs.GetCandidate(current, triedCandidate[current]);
+      triedCandidate[current]++;
+      is_answer = true;
+
+      for (int i=0; i<j; i++) {
+
+        // condition 1: check if current candidate is already included in the answer
+        if (answer[matchingOrder[i]] == currCandidate){
+          is_answer = false;
+          break;
+        }
+
+        // condition 2: check if every edge in query have corresponding edge in data graph
+        if (query.IsNeighbor(matchingOrder[i], current)) {
+          if (!data.IsNeighbor(answer[matchingOrder[i]], currCandidate)) {
+            is_answer = false;
+            break;
+          }
+        }
+      }
+      //std::cout << "j: " << j << "\tis_answer: " << is_answer <<
+      //"\t" << triedCandidate[current] << "\t" << cs.GetCandidateSize(current) << "\n";
+
+      // if both condition 1, 2 are matched, current candidate is selected
+      if (is_answer == true) {
+        answer[matchingOrder[j]] = currCandidate;
+
+        // if answer is completed, print the answer, else go to next round
+        if (j == (query_size-1)) {
+          cnt++;
+          out<<"a";
+          for (int k=0; k<query_size; k++)
+            out<<" "<<answer[k];
+          out<<std::endl;
+          triedCandidate[current] = 0;
+          j--;
+        } else {
+          j++;
+        }
+        
+      }
+
+    } else {
+      triedCandidate[current] = 0;
+      j--;
+    }
+  }
+
+  return;
+}
+
+void Backtrack::PrintAllMatches(std::string filename, const Graph &data, const Graph &query,
+                                const CandidateSet &cs) {
+  for(int i=0; i<7; i++){
+    filename.pop_back();
+  }
+  filename.append("_output.txt");
 
   size_t query_vertex_num = query.GetNumVertices();
 
@@ -122,138 +260,14 @@ void Backtrack::PrintAllMatches(const Graph &data, const Graph &query,
   Tree *tree;
   Vertex *bfs_order;
   bfsTraversal(query, root, tree, bfs_order);
-
-  size_t cnt_vertex = 0;
-  size_t ans_count = 0;
-  size_t max_num = 100000;
-
-  std::vector<Vertex> answer(query_vertex_num);
   //build DAG -> first in bfs_order is the parent
 
   //select extendable vertices
   //select with RI
-  vector<bool> visited(query_vertex_num, false);
-  queue<Vertex> extendable_queue;
-  vector<Vertex> matchingOrder(query_vertex_num);
-  vector<Vertex> extendable_vertex(query_vertex_num);       //extendable_vertex[u] = 1 if u is extendable
-  vector<size_t> extendable_vertex_order(query_vertex_num); //extendable_vertex_order[ith] = u means u is ith number in extendable list
-  size_t ex_index = 0 ;
-
-  Vertex u = root;
-  int b = 0;
-  bool is_answer = true;
-
-  while(ans_count < max_num &&  b > -1){
-    //printf("s%d %d\n", b, u);
-    for(size_t i = 0; i < cs.GetCandidateSize(u); i++){
-      Vertex candidate = cs.GetCandidate(u, i);
-      printf("%d %d %d\n", b, u, candidate);
-
-      //if not included in the answer, and there is an edge(u-v, data u-data v)
-      for (size_t k=0; k<b; k++) {
-        // condition 1: check if current candidate is already included in the answer
-        if (answer[matchingOrder[k]] == candidate){
-          is_answer = false;
-          break;
-        }
-
-        // condition 2: check if every edge in query have corresponding edge in data graph
-        if (query.IsNeighbor(matchingOrder[k], u)) {
-          if (!data.IsNeighbor(answer[matchingOrder[k]], candidate)) {
-            is_answer = false;
-            break;
-          }
-        }
-      }
-      printf("%d %d\n", b, u);
-
-      if(!is_answer) continue;
-      printf("%d %d\n", b, u);
-      matchingOrder[b] = u;
-      answer[u] = candidate;
-      visited[u] = true;
-      b++;
-
-      if(b == query_vertex_num) {
-        ans_count++;
-        printf("a ");
-        for(size_t k=0; k<query_vertex_num; k++)
-          printf("%d ", answer[k]);
-        printf("\n");
-        b--;
-        continue;
-      }
-
-      //find extendable vertices
-      for(size_t j = 0; j < tree[u].children_count_; j++){
-        Vertex child = tree[u].children_[j];
-        printf("child %d\n", child);
-        tree[child].visted_parent++;
-
-        if(!visited[child] && tree[child].visted_parent == tree[child].parent_count_){
-          //extendable_queue.push(child);
-          extendable_vertex_order[ex_index++] =child;
-          extendable_vertex[child] = 1;
-          visited[child] = true;
-        }
-      }
-
-      //TODO: when RI is same?
-      Vertex max_ri_vertex = extendable_vertex_order[ex_index-1];
-      size_t max_ri = tree[max_ri_vertex].parent_count_;
-      size_t max_ri_index=ex_index-1;
-      printf("max:%d max_v:%d\n", max_ri, max_ri_vertex);
-
-      for(int j=0; j<ex_index-1; j++){
-        Vertex v = extendable_vertex_order[j];
-        printf("v:%d parent_count:%d\n",v, tree[v].parent_count_);
-        if(max_ri < tree[v].parent_count_) {
-          max_ri = tree[v].parent_count_;
-          max_ri_vertex = v; 
-          max_ri_index = j;
-        }
-      }
-      u = max_ri_vertex;
-      
-      extendable_vertex_order[max_ri_index] = 
-
-
-      /* using queue
-      //no answer
-      if(extendable_queue.empty()) exit(0);
-      Vertex max_ri_vertex = extendable_queue.front();
-      extendable_queue.pop();
-      size_t max_ri = tree[max_ri_vertex].parent_count_;
-      printf("max:%d max_v:%d\n", max_ri, max_ri_vertex);
-
-      for(int j=0; j<extendable_queue.size(); j++){
-        Vertex v = extendable_queue.front();
-        printf("v:%d parent_count:%d\n",v, tree[v].parent_count_);
-        extendable_queue.pop();
-        if(max_ri < tree[v].parent_count_) {
-          extendable_queue.push(max_ri_vertex);
-          max_ri = tree[v].parent_count_;
-          max_ri_vertex = v; 
-        }else{
-          extendable_queue.push(v);
-        }
-      }
-      */
-
-      printf("b%d u%d\n", b, u);
-    }
-    b--;
-    for(size_t j = 0; j < tree[u].children_count_; j++){
-      Vertex child = tree[u].children_[j];
-      printf("child %d\n", child);
-      tree[child].visted_parent--;
-
-      if(!visited[child] && tree[child].visted_parent == tree[child].parent_count_){
-        extendable_queue.push(child);
-        //extendable_vertex[ex_index++] = child;
-        visited[child] = false;
-      }
-    }
-  }
+  //finding out matching order
+  std::vector<Vertex> matchingOrder = FindingMatchingOrder(root, data, query, cs, tree);
+  
+  //backtracking and printing out
+  Backtracking(filename, matchingOrder, data, query, cs);
 
 }

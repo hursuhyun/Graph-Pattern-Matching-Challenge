@@ -15,10 +15,9 @@
 class Backtrack {
  public:
   Backtrack();
-  ~Backtrack();
-
-  void PrintAllMatches(const Graph &data, const Graph &query,
-                       const CandidateSet &cs);
+  ~Backtrack();    
+  
+  void PrintAllMatches(std::string filename, const Graph &data, const Graph &query, const CandidateSet &cs);
   void bfsTraversal(const Graph &query, Vertex root_vertex, Tree *&tree, Vertex *&bfs_order);
 };
 
