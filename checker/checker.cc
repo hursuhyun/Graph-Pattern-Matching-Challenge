@@ -1,7 +1,20 @@
 #include "common.h"
 
+
 using namespace std;
 string ans_filename, data_filename, cs_filename, query_filename;
+
+bool find_file(const std::string file_name_base) // search for this name
+{
+    std::string file_name = "../build/";
+    bool exist = true;
+    file_name.append(file_name_base);
+    file_name.append("_output.txt");
+    ifstream file(file_name);
+    if(!file.is_open()) exist = false;
+    file.close();
+    return exist;
+}
 
 void checkfile(ifstream &ansf, ifstream &dataf, ifstream &csf, ifstream &queryf){
   
@@ -107,10 +120,37 @@ void getdata(ifstream &dataf, size_t &num_vertices, vector<Label> &label_, set<L
   dataf.close();
 }
 
-int main(int argc, char* argv[]){
-  std::string file = argv[1];
-  std::string ans_filename="../build/", data_filename="../build/", cs_filename="../build/", query_filename="../build/";
 
+int main(int argc, char* argv[]){
+
+  std::string hprd_file_list[8] = {"lcc_hprd_n1", "lcc_hprd_n3", "lcc_hprd_n5", "lcc_hprd_n8", "lcc_hprd_s1", "lcc_hprd_s3", "lcc_hprd_s5", "lcc_hprd_s8"};
+  std::string human_file_list[8] = {"lcc_human_n1", "lcc_human_n3", "lcc_human_n5", "lcc_human_n8", "lcc_human_s1", "lcc_human_s3", "lcc_human_s5", "lcc_human_s8"};
+  std::string yeast_file_list[8] = {"lcc_yeast_n1", "lcc_yeast_n3", "lcc_yeast_n5", "lcc_yeast_n8", "lcc_yeast_s1", "lcc_yeast_s3", "lcc_yeast_s5", "lcc_yeast_s8"};
+  std::vector<std::string> existing_file_list;
+
+  for (int i=0; i<8; i++){
+    if (find_file(hprd_file_list[i])) {
+      existing_file_list.push_back(hprd_file_list[i]);
+    }
+  }
+  for (int i=0; i<8; i++){
+    if (find_file(human_file_list[i])) {
+      existing_file_list.push_back(human_file_list[i]);
+    }
+  }
+  for (int i=0; i<8; i++){
+    if (find_file(yeast_file_list[i])) {
+      existing_file_list.push_back(yeast_file_list[i]);
+    }
+  }
+
+  int size = existing_file_list.size();
+  for(int i=0; i<size; i++){
+      std::cout << "checking for " << existing_file_list[i] << "\n" << "-----------------------------------------" << "\n";
+  
+  std::string file = existing_file_list[i];
+  std::string ans_filename="../build/", data_filename="../build/", cs_filename="../build/", query_filename="../build/";
+  
   ans_filename.append(file);
   cs_filename.append(file);
   query_filename.append(file);
@@ -214,6 +254,8 @@ int main(int argc, char* argv[]){
     }
   }
   cout << "well done!"<< endl;
-  return 0;
+  std::cout << "\n";
+  }
 
+  return 0;
 }
