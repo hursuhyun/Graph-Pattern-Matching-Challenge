@@ -5,6 +5,7 @@
 
 #include "backtrack.h"
 #include <stdio.h>
+#define shell 0
 using namespace std;
 Backtrack::Backtrack() {}
 Backtrack::~Backtrack() {}
@@ -137,22 +138,44 @@ std::vector<Vertex> FindingMatchingOrder(Vertex u, const Graph &data, const Grap
     Vertex max_ri_vertex = extendable_vertex_order[ex_index-1];
     size_t max_ri = tree[max_ri_vertex].parent_count_;
     size_t max_ri_index=ex_index-1;
+    bool flag = true;
+    /*
+    if(c.GetCandidateSize(max_ri_vertex) ==0) {
+      cout << "no candidates" << endl;
+      exit(1);
+    }
+    if(c.GetCandidateSize(max_ri_vertex) ==1) {
+      u = max_ri_vertex;
+      flag = false;
+    }*/
 
-    for(int j=0; j<ex_index-1; j++){
+    for(int j=0; j<ex_index-1 && flag; j++){
       Vertex v = extendable_vertex_order[j];
-      if(max_ri < tree[v].parent_count_) {
+      /*
+      if(c.GetCandidateSize(v) ==0) {
+        cout << "no candidates" << endl;
+        exit(1);
+      }
+      if(c.GetCandidateSize(v) ==1) {
+        u = max_ri_vertex;
+        max_ri_vertex = v; 
+        max_ri_index = j;
+        flag = false;
+      }
+      */
+      //if( max_ri < tree[v].parent_count_ || (max_ri == tree[v].parent_count_ && c.GetCandidateSize(max_ri_vertex) > c.GetCandidateSize(v)) ) {
+      if(max_ri < tree[v].parent_count_ ) {
         max_ri = tree[v].parent_count_;
         max_ri_vertex = v; 
         max_ri_index = j;
       }
     }
-    //u = max_ri_vertex;
-    //modify from here
     extendable_vertex_order[max_ri_index] = extendable_vertex_order[ex_index-1];
     ex_index--;
 
     u=max_ri_vertex;
   }
+
 
   return matchingOrder;
 
@@ -219,8 +242,12 @@ void Backtracking(std::string filename, std::vector<Vertex> matchingOrder, const
           for (int k=0; k<query_size; k++)
             out<<" "<<answer[k];
           out<<std::endl;
-          triedCandidate[current] = 0;
-          j--;
+          if(shell){
+            std::cout << "a"; 
+            for (int k=0; k<query_size; k++)
+              std::cout<<" "<<answer[k];
+            std::cout<<std::endl;
+          }
         } else {
           j++;
         }
@@ -232,6 +259,7 @@ void Backtracking(std::string filename, std::vector<Vertex> matchingOrder, const
       j--;
     }
   }
+  std::cout << "count: " << cnt << endl;
 
   return;
 }
@@ -251,7 +279,7 @@ void Backtrack::PrintAllMatches(std::string filename, const Graph &data, const G
   Vertex root = 0;
 
   for(Vertex i=0; i<query_vertex_num; i++){
-    if(max_degree > query.GetDegree(i)){
+    if(max_degree < query.GetDegree(i)){
       max_degree = query.GetDegree(i);
       root = i;
     }
@@ -265,8 +293,13 @@ void Backtrack::PrintAllMatches(std::string filename, const Graph &data, const G
   //select extendable vertices
   //select with RI
   //finding out matching order
-  std::vector<Vertex> matchingOrder = FindingMatchingOrder(root, data, query, cs, tree);
-  
+    std::vector<Vertex> matchingOrder = FindingMatchingOrder(root, data, query, cs, tree);
+  if(shell){
+    for(Vertex i=0; i<query_vertex_num; i++)
+      std::cout << matchingOrder[i] << " ";
+    std::cout << endl;
+  }
+
   //backtracking and printing out
   Backtracking(filename, matchingOrder, data, query, cs);
 
