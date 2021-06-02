@@ -2,16 +2,15 @@
  * @file backtrack.cc
  *
  */
-
 #include "backtrack.h"
 #include <stdio.h>
-#define shell 0
-#define tofile 0
 using namespace std;
+
 Backtrack::Backtrack() {}
 Backtrack::~Backtrack() {}
 
-//make tree using bfs
+
+
 void Backtrack::bfsTraversal(const Graph &query, Vertex root_vertex, Tree *&tree, Vertex *&bfs_order) {
     size_t vertex_num = query.GetNumVertices();
 
@@ -54,59 +53,27 @@ void Backtrack::bfsTraversal(const Graph &query, Vertex root_vertex, Tree *&tree
     }
 }
 
-//how to get vertices by label..?
-void PreprocessingLabel(const Graph &graph){
-  size_t vertex_num = graph.GetNumVertices();
-  for(size_t i=0; i<vertex_num; i++){
+std::vector<Vertex> Backtrack::FirstCSMin(const Graph &data, const Graph &query,
+                                const CandidateSet &cs) { 
+  size_t query_vertex_num = query.GetNumVertices();
 
-  }
+  //TODO: select first node
+  //Vertex root = GetRootVertex();
+  size_t min_degree = data.GetNumVertices();
+  Vertex root = 0;
 
-}
-
-void getVerticesByLabel(const Graph &graph, Label label){
-
-}
-
-/*
-Vertex Backtrack::GetRootVertex(const Graph &data, const Graph &query) {
-    size_t vertex_num = query.GetNumVertices();
-    double min_score = query.GetNumVertices();
-    Vertex start_vertex = 0;
-
-    PreprocessingLabel(data);
-
-    for (size_t i = 0; i < query.GetNumVertices(); ++i) {
-        size_t degree = query.GetDegree(i);
-        if (degree <= 1)
-            continue;
-
-        size_t count = 0;    
-        
-        Label label = query.GetLabel(i);
-        size_t degree = query.GetDegree(i);
-        count = 0;
-        const std::vector<Vertex> data_vertices = data.getVerticesByLabel(label);
-
-        for (Vertex v : data_vertices) {
-            if (data.GetDegree(v) >= degree) {
-                count += 1;
-            }
-        }
-
-        double cur_score = count / (double)degree;
-        if (cur_score < min_score) {
-            min_score = cur_score;
-            start_vertex = i;
-        }
+  for(Vertex i=0; i<query_vertex_num; i++){
+    if(min_degree > query.GetDegree(i)){
+      min_degree = query.GetDegree(i);
+      root = i;
     }
+  }
+  //bfs
+  Tree *tree;
+  Vertex *bfs_order;
+  bfsTraversal(query, root, tree, bfs_order);
 
-    return start_vertex;
-}
-*/
-
-std::vector<Vertex> FindingMatchingOrder(Vertex u, const Graph &data, const Graph &query,
-                                const CandidateSet &c, Tree *&tree) {
-  /**
+    /**
    * finding out the order of matching
    * neighborSize : number of neighbors within matched vertices
    * matchingOrder : order of matching
@@ -114,12 +81,11 @@ std::vector<Vertex> FindingMatchingOrder(Vertex u, const Graph &data, const Grap
    * one : vertex with candidate size of one, if any
    */
   
-  size_t query_vertex_num = query.GetNumVertices();
-
   vector<bool> visited(query_vertex_num, false);
   queue<Vertex> extendable_queue;
   vector<size_t> extendable_vertex_order(query_vertex_num); //extendable_vertex_order[ith] = u means u is ith number in extendable list
   size_t ex_index = 0 ;
+  Vertex u = root;
 
   std::vector<Vertex> matchingOrder(query_vertex_num);
   for(size_t i = 0; i < query_vertex_num; i++){
@@ -136,13 +102,13 @@ std::vector<Vertex> FindingMatchingOrder(Vertex u, const Graph &data, const Grap
 
     if(ex_index == 0) break;
     Vertex max_candidate = extendable_vertex_order[ex_index-1] ;
-    size_t max_cs = c.GetCandidateSize(max_candidate);
+    size_t max_cs = cs.GetCandidateSize(max_candidate);
     size_t max_index =ex_index-1;
     for(int j = 0; j < ex_index-1; j++){
       Vertex can = extendable_vertex_order[j];
-      if(max_cs < c.GetCandidateSize(can) ){
+      if(max_cs < cs.GetCandidateSize(can) ){
         max_candidate = can;
-        max_cs = c.GetCandidateSize(can);
+        max_cs = cs.GetCandidateSize(can);
         max_index = j;
       }
     }
@@ -153,32 +119,133 @@ std::vector<Vertex> FindingMatchingOrder(Vertex u, const Graph &data, const Grap
   }
 
   return matchingOrder;
+}
 
+std::vector<Vertex> Backtrack::SecondRIMin(const Graph &data, const Graph &query,
+                                const CandidateSet &cs) { 
+  int32_t query_size = query.GetNumVertices();
+  size_t maxDegree = data.GetNumVertices(), degree, cs_size;
+  Vertex maxVertex = 0;
+  Vertex v = 0;
+  bool is_answer = true;
+
+  // find vertex of max degree -> inital vertex
+  for(v=0; v<query_size; v++) {
+    degree = query.GetDegree(v);
+    if (maxDegree > degree) {
+      maxDegree = degree;
+      maxVertex = v;
+    }
+  } v = 0;
+
+  /**
+   * finding out the order of matching
+   * neighborSize : number of neighbors within matched vertices
+   * matchingOrder : order of matching
+   * extendableVertex : extendable vertices from matched ones
+   * one : vertex with candidate size of one, if any
+   */
+  std::vector<Vertex> neighborSize(query_size, 0), next, matchingOrder(query_size);
+  std::set<Vertex>  extendableVertex;
+  Vertex neighbor, one;
+  int start, end, maximum = 0, deg = 0;
+
+
+  for (int j=0; j<query_size; j++) {
+
+    matchingOrder[j] = v;
+    neighborSize[v] = -1;
+    next.clear();
+    extendableVertex.erase(v);
+    one = query_size;
+    
+    start = query.GetNeighborStartOffset(v);
+    end = query.GetNeighborEndOffset(v);
+    maximum = 0;
+
+    //recomputing neighbor size
+    for (int t=start; t<end; t++){
+          neighbor = query.GetNeighbor(t);
+          if (neighborSize[neighbor] != -1) {
+            extendableVertex.insert(neighbor);
+            deg = ++neighborSize[neighbor];
+          }
+    }
+
+    /**
+     * searching for next vertex
+     */
+    for (std::set<Vertex>::iterator s=extendableVertex.begin(); s!=extendableVertex.end(); s++) {
+      if (cs.GetCandidateSize(*s) == 1) {
+        if (*s < one) one = *s;
+      } else {
+        deg = neighborSize[*s];
+        if (maximum < deg) {
+          maximum = deg;
+          next.clear();
+          next.push_back(*s);
+        } else if (maximum == deg) {
+          next.push_back(*s);
+        }
+      }
+    }
+
+    /**
+     * renewing current vertex
+     * if there is vertex with candidate size one, choose it
+     * else if there is only one vertex with maximum neighbors, choose it
+     * else choose one with minimum candidate size from those with maximum neighbors
+     */
+    if (one < query_size) {
+      v = one;
+    } else if (next.size() == 1) {
+      v = next.front();
+    } else {
+      size_t cs_min = data.GetNumVertices();
+      while (next.size() > 0) {
+        Vertex val = next.back();
+        size_t cs_size = cs.GetCandidateSize(val);
+        if (cs_size < cs_min) {
+          v = val;
+          cs_min = cs_size;
+        } else if (cs_min == cs_size && val < v) v = val;
+        next.pop_back();
+      }
+    } 
+
+  }
+
+  return matchingOrder;
 }
 
 
-void Backtracking(std::string filename, std::vector<Vertex> matchingOrder, const Graph &data, const Graph &query,
-                                const CandidateSet &cs) {
-  std::ofstream out(filename);
-  
-  out<<"t "<<query.GetNumVertices()<<std::endl;
+bool Backtracking(std::vector<Vertex> matchingOrder, const Graph &data, const Graph &query,
+                                const CandidateSet &cs, bool first) {
+
+
+  /**
+   * backtracking
+   */
 
   bool is_answer = true; 
-  std::vector<Vertex> answer;
-  std::vector<size_t> triedCandidate;
   int32_t query_size = query.GetNumVertices();
+  std::vector<Vertex> answer(query_size, 0);
+  std::vector<size_t> triedCandidate(query_size, 0);
+  std::vector<bool> occupiedCandidate(data.GetNumVertices(), false);
 
-  answer.resize(query_size, 0);
-  triedCandidate.resize(query_size, 0);
-
-  int j=0;
+  int j = 0;
   Vertex current;
   Vertex currCandidate;
-  int cnt=0;
-  int whilecnt = 0;
+  int cnt = 0;
+  int j_cnt = 0;
+  bool print_started = true;
 
   while (j > -1 && cnt < 100000) {
-    whilecnt++;
+    j_cnt++;
+    if(first && j_cnt > 1000000 && cnt==0) {
+      print_started = false;
+      break;
+    }
     current = matchingOrder[j];
 
     // check if there is untried candidate of current vertex in query
@@ -204,8 +271,6 @@ void Backtracking(std::string filename, std::vector<Vertex> matchingOrder, const
           }
         }
       }
-      //std::cout << "j: " << j << "\tis_answer: " << is_answer <<
-      //"\t" << triedCandidate[current] << "\t" << cs.GetCandidateSize(current) << "\n";
 
       // if both condition 1, 2 are matched, current candidate is selected
       if (is_answer == true) {
@@ -213,21 +278,11 @@ void Backtracking(std::string filename, std::vector<Vertex> matchingOrder, const
 
         // if answer is completed, print the answer, else go to next round
         if (j == (query_size-1)) {
-          if(cnt == 0) cout << "num" << whilecnt << endl;
-          //if(cnt == 0) cout << "num" << whilecnt << endl;
           cnt++;
-          if(tofile){
-            out<<"a";
-            for (int k=0; k<query_size; k++)
-              out<<" "<<answer[k];
-            out<<std::endl;
-          }
-          if(shell){
-            std::cout << "a"; 
-            for (int k=0; k<query_size; k++)
-              printf("%d ", answer[k]);
-            printf("\n");
-          }
+          std::printf("a");
+          for (int k=0; k<query_size; k++)
+            std::printf(" %d", answer[k]);
+          std::printf("\n");
         } else {
           j++;
         }
@@ -238,50 +293,20 @@ void Backtracking(std::string filename, std::vector<Vertex> matchingOrder, const
       triedCandidate[current] = 0;
       j--;
     }
-  }
-
-  cout << "count: " <<  cnt << endl;
-
-  return;
+  } 
+  std::printf("%d\n", cnt);
+  return print_started;
 }
 
-void Backtrack::PrintAllMatches(std::string filename, const Graph &data, const Graph &query,
+void Backtrack::PrintAllMatches(const Graph &data, const Graph &query,
                                 const CandidateSet &cs) {
-  for(int i=0; i<7; i++){
-    filename.pop_back();
+  std::cout << "t " << query.GetNumVertices() << "\n";
+
+  std::vector<Vertex> matchingOrder = FirstCSMin(data, query, cs);
+  
+  if ( !Backtracking(matchingOrder, data, query, cs, true) ) {
+    std::cout << "matching algorithm switched"<<std::endl;
+    matchingOrder = SecondRIMin(data, query, cs);
+    Backtracking(matchingOrder, data, query, cs, false);
   }
-  filename.append("_output.txt");
-
-  size_t query_vertex_num = query.GetNumVertices();
-
-  //TODO: select first node
-  //Vertex root = GetRootVertex();
-  size_t max_degree = 0;
-  Vertex root = 0;
-
-  for(Vertex i=0; i<query_vertex_num; i++){
-    if(max_degree > query.GetDegree(i)){
-      max_degree = query.GetDegree(i);
-      root = i;
-    }
-  }
-  //bfs
-  Tree *tree;
-  Vertex *bfs_order;
-  bfsTraversal(query, root, tree, bfs_order);
-  //build DAG -> first in bfs_order is the parent
-
-  //select extendable vertices
-  //select with RI
-  //finding out matching order
-  std::vector<Vertex> matchingOrder = FindingMatchingOrder(root, data, query, cs, tree);
-  if(1){
-    for(Vertex i=0; i<query_vertex_num; i++)
-      std::cout << matchingOrder[i] << " ";
-    std::cout << endl;
-  }
-
-  //backtracking and printing out
-  Backtracking(filename, matchingOrder, data, query, cs);
-
 }
