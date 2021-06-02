@@ -4,6 +4,7 @@
  */
 #include "backtrack.h"
 #include <stdio.h>
+#include "time.h"
 using namespace std;
 
 Backtrack::Backtrack() {}
@@ -239,8 +240,14 @@ bool Backtracking(std::vector<Vertex> matchingOrder, const Graph &data, const Gr
   int cnt = 0;
   int j_cnt = 0;
   bool print_started = true;
+  time_t start = time(NULL);
 
   while (j > -1 && cnt < 100000) {
+    
+    time_t end = time(NULL);
+    double time = (double)(end - start);
+    if(time >=60) break;
+
     j_cnt++;
     if(first && j_cnt > 1000000 && cnt==0) {
       print_started = false;
