@@ -59,10 +59,10 @@ Vertex GetRoot(const Graph &data, const Graph &query, const CandidateSet &cs){
   Vertex root=0;
 
   //get root by max_degree
-  /*
+  //*
   size_t max_degree = 0;
   for(Vertex i=0; i<query_vertex_num; i++){
-    if(max_degree < query.GetDegree(i)){
+    if(max_degree > query.GetDegree(i)){
       max_degree = query.GetDegree(i);
       root = i;
     }
@@ -70,7 +70,7 @@ Vertex GetRoot(const Graph &data, const Graph &query, const CandidateSet &cs){
   //*/
 
   //get root by minimum candidate/degree
-  //*
+  /*
   double canbydeg = 10000000;
   for(Vertex i=0; i<query_vertex_num; i++){
     if(canbydeg > (double)(cs.GetCandidateSize(i)/query.GetDegree(i)) ){
@@ -163,7 +163,7 @@ std::vector<Vertex> FindingMatchingOrder(Vertex u, const Graph &data, const Grap
     bool flag = true;
     
     //if one candidate, then pick the one as the next order
-    //*
+    /*
     if(c.GetCandidateSize(max_ri_vertex) ==0) {
       cout << "no candidates" << endl;
       exit(1);
@@ -171,10 +171,10 @@ std::vector<Vertex> FindingMatchingOrder(Vertex u, const Graph &data, const Grap
     if(c.GetCandidateSize(max_ri_vertex) ==1) {
       flag = false;
     }
-
+    //*/
     for(int j=0; j<ex_index-1 && flag; j++){
       Vertex v = extendable_vertex_order[j];
-      //*
+      /*
       if(c.GetCandidateSize(v) ==0) {
         cout << "no candidates" << endl;
         exit(1);
@@ -186,8 +186,8 @@ std::vector<Vertex> FindingMatchingOrder(Vertex u, const Graph &data, const Grap
         flag = false;
       }
       //*/
-      if( max_ri < tree[v].parent_count_ || (max_ri == tree[v].parent_count_ && c.GetCandidateSize(max_ri_vertex) > c.GetCandidateSize(v)) ) {
-      //if(max_ri < tree[v].parent_count_ ) {
+      //if( max_ri < tree[v].parent_count_ || (max_ri == tree[v].parent_count_ && c.GetCandidateSize(max_ri_vertex) > c.GetCandidateSize(v)) ) {
+      if(max_ri < tree[v].parent_count_ ) {
         max_ri = tree[v].parent_count_;
         max_ri_vertex = v; 
         max_ri_index = j;
@@ -223,6 +223,7 @@ void Backtracking(std::string filename, std::vector<Vertex> matchingOrder, const
   Vertex current;
   Vertex currCandidate;
   int cnt=0;
+  int whilecnt = 0;
 
   while (j > -1 && cnt < 100000) {
 
@@ -260,6 +261,7 @@ void Backtracking(std::string filename, std::vector<Vertex> matchingOrder, const
 
         // if answer is completed, print the answer, else go to next round
         if (j == (query_size-1)) {
+          if(cnt == 0) cout << "num" << whilecnt << endl;
           cnt++;
           if(tofile){
             out<<"a";
@@ -283,6 +285,8 @@ void Backtracking(std::string filename, std::vector<Vertex> matchingOrder, const
       triedCandidate[current] = 0;
       j--;
     }
+
+    whilecnt++;
   }
   std::cout << "count: " << cnt << endl;
 
