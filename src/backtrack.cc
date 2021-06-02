@@ -5,6 +5,8 @@
 
 #include "backtrack.h"
 #include <stdio.h>
+#define shell 0
+#define tofile 0
 using namespace std;
 Backtrack::Backtrack() {}
 Backtrack::~Backtrack() {}
@@ -173,9 +175,10 @@ void Backtracking(std::string filename, std::vector<Vertex> matchingOrder, const
   Vertex current;
   Vertex currCandidate;
   int cnt=0;
+  int whilecnt = 0;
 
   while (j > -1 && cnt < 100000) {
-
+    whilecnt++;
     current = matchingOrder[j];
 
     // check if there is untried candidate of current vertex in query
@@ -210,13 +213,21 @@ void Backtracking(std::string filename, std::vector<Vertex> matchingOrder, const
 
         // if answer is completed, print the answer, else go to next round
         if (j == (query_size-1)) {
+          if(cnt == 0) cout << "num" << whilecnt << endl;
+          //if(cnt == 0) cout << "num" << whilecnt << endl;
           cnt++;
-          out<<"a";
-          for (int k=0; k<query_size; k++)
-            out<<" "<<answer[k];
-          out<<std::endl;
-          triedCandidate[current] = 0;
-          j--;
+          if(tofile){
+            out<<"a";
+            for (int k=0; k<query_size; k++)
+              out<<" "<<answer[k];
+            out<<std::endl;
+          }
+          if(shell){
+            std::cout << "a"; 
+            for (int k=0; k<query_size; k++)
+              printf("%d ", answer[k]);
+            printf("\n");
+          }
         } else {
           j++;
         }
@@ -264,7 +275,12 @@ void Backtrack::PrintAllMatches(std::string filename, const Graph &data, const G
   //select with RI
   //finding out matching order
   std::vector<Vertex> matchingOrder = FindingMatchingOrder(root, data, query, cs, tree);
-  
+  if(1){
+    for(Vertex i=0; i<query_vertex_num; i++)
+      std::cout << matchingOrder[i] << " ";
+    std::cout << endl;
+  }
+
   //backtracking and printing out
   Backtracking(filename, matchingOrder, data, query, cs);
 
