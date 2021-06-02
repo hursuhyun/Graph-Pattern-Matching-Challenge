@@ -7,7 +7,6 @@
 #include "candidate_set.h"
 #include "common.h"
 #include "graph.h"
-#include <time.h>
 
 int main(int argc, char* argv[]) {
   if (argc < 4) {
@@ -26,9 +25,8 @@ int main(int argc, char* argv[]) {
 
   Backtrack backtrack;
 
-
    time_t start = time(NULL);
-  backtrack.PrintAllMatches(query_file_name, data, query, candidate_set);
+  backtrack.PrintAllMatches(data, query, candidate_set);
    time_t end = time(NULL);
 
   double time = (double)(end - start);
