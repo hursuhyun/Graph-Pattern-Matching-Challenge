@@ -59,11 +59,22 @@ Vertex GetRoot(const Graph &data, const Graph &query, const CandidateSet &cs){
   Vertex root=0;
 
   //get root by max_degree
-  //*
+  /*
   size_t max_degree = 0;
   for(Vertex i=0; i<query_vertex_num; i++){
     if(max_degree > query.GetDegree(i)){
       max_degree = query.GetDegree(i);
+      root = i;
+    }
+  }
+  //*/
+
+  //get root by min_degree
+  /*
+  size_t min_degree = 999999999;
+  for(Vertex i=0; i<query_vertex_num; i++){
+    if(min_degree > query.GetDegree(i)){
+      min_degree = query.GetDegree(i);
       root = i;
     }
   }
@@ -79,6 +90,19 @@ Vertex GetRoot(const Graph &data, const Graph &query, const CandidateSet &cs){
     }
   }
   //*/
+
+  //get root by min_candidate_size
+  //*
+  size_t min_cansize = 999999999;
+  for(Vertex i=0; i<query_vertex_num; i++){
+    if(min_cansize > cs.GetCandidateSize(i)){
+      min_cansize = cs.GetCandidateSize(i);
+      root = i;
+    }
+  }
+  //*/
+
+
   return root;
 
 }
@@ -186,8 +210,8 @@ std::vector<Vertex> FindingMatchingOrder(Vertex u, const Graph &data, const Grap
         flag = false;
       }
       //*/
-      //if( max_ri < tree[v].parent_count_ || (max_ri == tree[v].parent_count_ && c.GetCandidateSize(max_ri_vertex) > c.GetCandidateSize(v)) ) {
-      if(max_ri < tree[v].parent_count_ ) {
+      if( max_ri < tree[v].parent_count_ || (max_ri == tree[v].parent_count_ && c.GetCandidateSize(max_ri_vertex) > c.GetCandidateSize(v)) ) {
+      //if(max_ri < tree[v].parent_count_ ) {
         max_ri = tree[v].parent_count_;
         max_ri_vertex = v; 
         max_ri_index = j;
