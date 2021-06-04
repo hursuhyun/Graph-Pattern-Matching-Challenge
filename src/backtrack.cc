@@ -9,32 +9,30 @@ using namespace std;
 Backtrack::Backtrack() {}
 Backtrack::~Backtrack() {}
 
-
-
-void Backtrack::bfsTraversal(const Graph &query, Vertex root_vertex, Tree *&tree, Vertex *&bfs_order) {
+/**
+ * @brief Backtrack to make DAG
+ * save child, parent in dag
+ */
+void Backtrack::bfsTraversal(const Graph &query, Vertex root, DAG *&dag) {
     size_t vertex_num = query.GetNumVertices();
 
     queue<Vertex> bfs_queue;
     vector<bool> visited(vertex_num, false);
 
-    tree = new Tree[vertex_num];
+    dag = new DAG[vertex_num];
     for (size_t i = 0; i < vertex_num; ++i) {
-        tree[i].initialize(vertex_num);
+        dag[i].init(vertex_num);
     }
-    bfs_order = new Vertex[vertex_num];
 
     size_t visited_vertex_count = 0;
-    bfs_queue.push(root_vertex);
-    visited[root_vertex] = true;
-    tree[root_vertex].level_ = 0;
+    bfs_queue.push(root);
+    visited[root] = true;
 
     while(!bfs_queue.empty()) {
         Vertex u = bfs_queue.front();
         bfs_queue.pop();
-        bfs_order[visited_vertex_count++] = u;
 
-        size_t u_nbrs_count;
-
+        //check neighbors, if not visited, push to queue
         size_t start = query.GetNeighborStartOffset(u);
         size_t end = query.GetNeighborEndOffset(u);
         size_t maximum = 0;
@@ -45,20 +43,24 @@ void Backtrack::bfsTraversal(const Graph &query, Vertex root_vertex, Tree *&tree
               if (!visited[u_nbr]) {
                 bfs_queue.push(u_nbr);
                 visited[u_nbr] = true;
-                tree[u_nbr].level_ = tree[u] .level_ + 1;
-                tree[u_nbr].parent_[tree[u_nbr].parent_count_++] = u;
-                tree[u].children_[tree[u].children_count_++] = u_nbr;
+                dag[u_nbr].parent_[dag[u_nbr].parent_count_++] = u;
+                dag[u].children_[dag[u].children_count_++] = u_nbr;
             }
         }
     }
 }
 
+  /**
+ * finding out the order of matching by candidate size
+ * neighborSize : number of neighbors within matched vertices
+ * matchingOrder : order of matching
+ * extendableVertex : extendable vertices from matched ones
+ */
 std::vector<Vertex> Backtrack::FirstCSMin(const Graph &data, const Graph &query,
                                 const CandidateSet &cs) { 
   size_t query_vertex_num = query.GetNumVertices();
 
-  //TODO: select first node
-  //Vertex root = GetRootVertex();
+  //select first node
   size_t min_degree = data.GetNumVertices();
   Vertex root = 0;
 
@@ -68,39 +70,42 @@ std::vector<Vertex> Backtrack::FirstCSMin(const Graph &data, const Graph &query,
       root = i;
     }
   }
-  //bfs
-  Tree *tree;
-  Vertex *bfs_order;
-  bfsTraversal(query, root, tree, bfs_order);
 
-    /**
-   * finding out the order of matching
-   * neighborSize : number of neighbors within matched vertices
-   * matchingOrder : order of matching
-   * extendableVertex : extendable vertices from matched ones
-   * one : vertex with candidate size of one, if any
-   */
+  //build dag by bfs
+  DAG *dag;
+  bfsTraversal(query, root, dag);
+
   
   vector<bool> visited(query_vertex_num, false);
   queue<Vertex> extendable_queue;
-  vector<size_t> extendable_vertex_order(query_vertex_num); //extendable_vertex_order[ith] = u means u is ith number in extendable list
+  vector<size_t> extendable_vertex_order(query_vertex_num); //extendable_vertex_order[ith] = u  means u is ith number in extendable list
   size_t ex_index = 0 ;
   Vertex u = root;
 
+  //calculate matching order using candidate size and extendable_vertex
   std::vector<Vertex> matchingOrder(query_vertex_num);
   for(size_t i = 0; i < query_vertex_num; i++){
     matchingOrder[i] = u;
-    for(size_t j = 0; j < tree[u].children_count_; j++){
-      Vertex child = tree[u].children_[j];
-      tree[child].visted_parent++;
 
-      if(!visited[child] && tree[child].visted_parent == tree[child].parent_count_){
+    //find child_vertices of u that parents are all visited(extendable)
+    //if extendable, check visited and put in the extendable_vertex_order vector
+    //TODO: two graph can be seperated
+    for(size_t j = 0; j < dag[u].children_count_; j++){
+      Vertex child = dag[u].children_[j];
+      dag[child].visted_parent++;
+
+      if(!visited[child] && dag[child].visted_parent == dag[child].parent_count_){
         extendable_vertex_order[ex_index++] =child;
         visited[child] = true;
       }
     }
 
+    //if there is no child that is extendable, break
+    //TODO: delete if possible
     if(ex_index == 0) break;
+
+    //find maximum candidate vertex in extendable_vertex_order
+    //it would become next chosen matching order
     Vertex max_candidate = extendable_vertex_order[ex_index-1] ;
     size_t max_cs = cs.GetCandidateSize(max_candidate);
     size_t max_index =ex_index-1;
@@ -318,4 +323,5 @@ void Backtrack::PrintAllMatches(std::string filename, const Graph &data, const G
     matchingOrder = SecondRIMin(data, query, cs);
     Backtracking(filename, matchingOrder, data, query, cs, false);
   }
+  return
 }
