@@ -17,9 +17,9 @@ class Backtrack {
   Backtrack();
   ~Backtrack();
 
-  void PrintAllMatches(std::string filename, const Graph &data, const Graph &query,
+  void PrintAllMatches(const Graph &data, const Graph &query,
                        const CandidateSet &cs);
-  void bfsTraversal(const Graph &query, Vertex root_vertex, Tree *&tree);
+  void bfsTraversal(const Graph &query, Vertex root_vertex, DAG *&tree);
   std::vector<Vertex> FirstCSMin(const Graph &data, const Graph &query, const CandidateSet &cs);
   std::vector<Vertex> SecondRIMin(const Graph &data, const Graph &query, const CandidateSet &cs);
 

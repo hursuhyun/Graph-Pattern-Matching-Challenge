@@ -193,7 +193,7 @@ inline bool Graph::IsNeighbor(Vertex u, Vertex v) const {
   return offset >= GetNeighborStartOffset(u, GetLabel(v)) &&
          offset < GetNeighborEndOffset(u, GetLabel(v)) && *it == v;
 }
-class Tree {
+class DAG {
 public:
     size_t parent_count_;
     Vertex* parent_;
@@ -201,7 +201,7 @@ public:
     size_t visted_parent;
     Vertex* children_;
 public:
-    Tree() {
+    DAG() {
         parent_count_ = 0;
         parent_ = NULL;
         children_ = NULL;
@@ -209,7 +209,7 @@ public:
         visted_parent = 0;
     }
 
-    void initialize(const size_t size) {
+    void init(const size_t size) {
         children_ = new Vertex[size];
         parent_ = new Vertex[size];
     }

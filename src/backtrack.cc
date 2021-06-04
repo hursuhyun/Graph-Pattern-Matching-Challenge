@@ -75,7 +75,6 @@ std::vector<Vertex> Backtrack::FirstCSMin(const Graph &data, const Graph &query,
   DAG *dag;
   bfsTraversal(query, root, dag);
 
-  
   vector<bool> visited(query_vertex_num, false);
   queue<Vertex> extendable_queue;
   vector<size_t> extendable_vertex_order(query_vertex_num); //extendable_vertex_order[ith] = u  means u is ith number in extendable list
@@ -89,7 +88,7 @@ std::vector<Vertex> Backtrack::FirstCSMin(const Graph &data, const Graph &query,
 
     //find child_vertices of u that parents are all visited(extendable)
     //if extendable, check visited and put in the extendable_vertex_order vector
-    //TODO: two graph can be seperated
+    //TODO: two graphs can be seperated
     for(size_t j = 0; j < dag[u].children_count_; j++){
       Vertex child = dag[u].children_[j];
       dag[child].visted_parent++;
@@ -102,7 +101,7 @@ std::vector<Vertex> Backtrack::FirstCSMin(const Graph &data, const Graph &query,
 
     //if there is no child that is extendable, break
     //TODO: delete if possible
-    if(ex_index == 0) break;
+    if(ex_index == 0 && i == query_vertex_num -1) break;
 
     //find maximum candidate vertex in extendable_vertex_order
     //it would become next chosen matching order
@@ -126,32 +125,45 @@ std::vector<Vertex> Backtrack::FirstCSMin(const Graph &data, const Graph &query,
   return matchingOrder;
 }
 
+/**
+ * Second matching order algorithm used.
+ * 
+ * return matchingOrder array
+ */
+
 std::vector<Vertex> Backtrack::SecondRIMin(const Graph &data, const Graph &query,
                                 const CandidateSet &cs) { 
-  int32_t query_size = query.GetNumVertices();
-  size_t maxDegree = data.GetNumVertices(), degree, cs_size;
-  Vertex maxVertex = 0;
-  Vertex v = 0;
-  bool is_answer = true;
 
-  // find vertex of max degree -> inital vertex
-  for(v=0; v<query_size; v++) {
+  int32_t query_size = query.GetNumVertices();
+
+
+  // find vertex of minimum degree -> inital vertex
+
+  size_t minDegree = data.GetNumVertices(), degree;
+  Vertex minVertex = 0;
+  Vertex v;
+
+  for (v = 0; v < query_size; v++) {
     degree = query.GetDegree(v);
-    if (maxDegree > degree) {
-      maxDegree = degree;
-      maxVertex = v;
+    if (minDegree > degree) {
+      minDegree = degree;
+      minVertex = v;
     }
-  } v = 0;
+  } v = minVertex;
+
+
 
   /**
    * finding out the order of matching
+   * 
    * neighborSize : number of neighbors within matched vertices
    * matchingOrder : order of matching
-   * extendableVertex : extendable vertices from matched ones
+   * reachableVertex : reachable vertices (those that have at least one edge with one of matched vertices)
    * one : vertex with candidate size of one, if any
    */
+
   std::vector<Vertex> neighborSize(query_size, 0), next, matchingOrder(query_size);
-  std::set<Vertex>  extendableVertex;
+  std::set<Vertex>  reachableVertex;
   Vertex neighbor, one;
   int start, end, maximum = 0, deg = 0;
 
@@ -161,26 +173,34 @@ std::vector<Vertex> Backtrack::SecondRIMin(const Graph &data, const Graph &query
     matchingOrder[j] = v;
     neighborSize[v] = -1;
     next.clear();
-    extendableVertex.erase(v);
+    reachableVertex.erase(v);
     one = query_size;
     
+
+    //recomputing neighbor size
+
     start = query.GetNeighborStartOffset(v);
     end = query.GetNeighborEndOffset(v);
     maximum = 0;
 
-    //recomputing neighbor size
     for (int t=start; t<end; t++){
           neighbor = query.GetNeighbor(t);
           if (neighborSize[neighbor] != -1) {
-            extendableVertex.insert(neighbor);
+            reachableVertex.insert(neighbor);
             deg = ++neighborSize[neighbor];
           }
     }
 
+
     /**
      * searching for next vertex
+     * 
+     * Case 1: find vertex with candidate size one, if any
+     * Case 2: if there is only one vertex with maximum neighbors, choose it
+     * Case 3: else, choose one with minimum candidate size from those with maximum neighbors
      */
-    for (std::set<Vertex>::iterator s=extendableVertex.begin(); s!=extendableVertex.end(); s++) {
+
+    for (std::set<Vertex>::iterator s=reachableVertex.begin(); s!=reachableVertex.end(); s++) {
       if (cs.GetCandidateSize(*s) == 1) {
         if (*s < one) one = *s;
       } else {
@@ -195,13 +215,28 @@ std::vector<Vertex> Backtrack::SecondRIMin(const Graph &data, const Graph &query
       }
     }
 
+
     /**
      * renewing current vertex
-     * if there is vertex with candidate size one, choose it
-     * else if there is only one vertex with maximum neighbors, choose it
-     * else choose one with minimum candidate size from those with maximum neighbors
+     * 
+     * Case 0: no reachable vertex, then find vertex with minimum degree again, within unchosen ones
+     * Case 1: vertex with candidate size one exist, choose it
+     * Case 2: if there is only one vertex with maximum neighbors, choose it
+     * Case 3: else, choose one with minimum candidate size from those with maximum neighbors
      */
-    if (one < query_size) {
+    if (reachableVertex.size() == 0) {
+      size_t minDegree = data.GetNumVertices(), degree;
+      Vertex minVertex = 0;
+      Vertex v;
+
+      for (v = 0; v < query_size; v++) {
+        degree = query.GetDegree(v);
+        if (minDegree > degree && neighborSize[neighbor] != -1) {
+          minDegree = degree;
+          minVertex = v;
+        }
+      } v = minVertex;
+    } else if (one < query_size) {
       v = one;
     } else if (next.size() == 1) {
       v = next.front();
@@ -224,35 +259,40 @@ std::vector<Vertex> Backtrack::SecondRIMin(const Graph &data, const Graph &query
 }
 
 
-bool Backtracking(std::string filename, std::vector<Vertex> matchingOrder, const Graph &data, const Graph &query,
+/**
+  * backtracking
+  * 
+  * parameter 'first' indicates whether this backtracking uses 
+  * matching order of first algorithm 'FirstCSMin'
+ */
+
+bool Backtracking(std::vector<Vertex> matchingOrder, const Graph &data, const Graph &query,
                                 const CandidateSet &cs, bool first) {
-  std::ofstream out(filename);
-  
-  out<<"t "<<query.GetNumVertices()<<std::endl;
 
-  /**
-   * backtracking
-   */
-
-  bool is_answer = true; 
   int32_t query_size = query.GetNumVertices();
   std::vector<Vertex> answer(query_size, 0);
   std::vector<size_t> triedCandidate(query_size, 0);
   std::vector<bool> occupiedCandidate(data.GetNumVertices(), false);
 
-  int j = 0;
-  Vertex current;
-  Vertex currCandidate;
-  int cnt = 0;
-  int j_cnt = 0;
-  bool print_started = true;
+  int j = 0, cnt = 0, j_cnt = 0;
+  Vertex current, currCandidate;
+  bool print_started = true, is_answer = true;
+
+  /**
+   *  perform backtracking until
+   *  Case 1: j < -1 -> no answer left
+   *  Case 2: cnt > 100000 -> finished printing 100000 answers
+   */
 
   while (j > -1 && cnt < 100000) {
+
+    // if too much time takes to print first answer, switch algorithm
     j_cnt++;
     if(first && j_cnt > 1000000 && cnt==0) {
       print_started = false;
       break;
     }
+
     current = matchingOrder[j];
 
     // check if there is untried candidate of current vertex in query
@@ -261,39 +301,34 @@ bool Backtracking(std::string filename, std::vector<Vertex> matchingOrder, const
       currCandidate = cs.GetCandidate(current, triedCandidate[current]);
       triedCandidate[current]++;
       is_answer = true;
-
-      for (int i=0; i<j; i++) {
-
-        // condition 1: check if current candidate is already included in the answer
-        if (answer[matchingOrder[i]] == currCandidate){
-          is_answer = false;
-          break;
-        }
+      
+      // condition 1: check if current candidate is already included in the answer
+      if (!occupiedCandidate[currCandidate]) {
 
         // condition 2: check if every edge in query have corresponding edge in data graph
-        if (query.IsNeighbor(matchingOrder[i], current)) {
-          if (!data.IsNeighbor(answer[matchingOrder[i]], currCandidate)) {
-            is_answer = false;
-            break;
+        for (int i=0; i<j; i++) {
+          if (query.IsNeighbor(matchingOrder[i], current)) {
+            if (!data.IsNeighbor(answer[matchingOrder[i]], currCandidate)) {
+              is_answer = false;
+              break;
+            }
           }
         }
-      }
+      } else is_answer = false;
 
       // if both condition 1, 2 are matched, current candidate is selected
       if (is_answer == true) {
         answer[matchingOrder[j]] = currCandidate;
 
         // if answer is completed, print the answer, else go to next round
-
         if (j == (query_size-1)) {
           cnt++;
-          out<<"a";
+          std::printf("a");
           for (int k=0; k<query_size; k++)
-            out<<" "<<answer[k];
-          out<<std::endl;
-          triedCandidate[current] = 0;
-          j--;
+            std::printf(" %d", answer[k]);
+          std::printf("\n");
         } else {
+        occupiedCandidate[currCandidate] = true;
           j++;
         }
         
@@ -302,26 +337,24 @@ bool Backtracking(std::string filename, std::vector<Vertex> matchingOrder, const
     } else {
       triedCandidate[current] = 0;
       j--;
+      occupiedCandidate[answer[matchingOrder[j]]] = false;
     }
   } 
-  std::printf("%d\n", cnt);
   return print_started;
 }
 
-void Backtrack::PrintAllMatches(std::string filename, const Graph &data, const Graph &query,
+void Backtrack::PrintAllMatches(const Graph &data, const Graph &query,
                                 const CandidateSet &cs) {
-  for(int i=0; i<7; i++){
-    filename.pop_back();
-  }
-  filename.append("_output.txt");
+  std::cout << "t " << query.GetNumVertices() << "\n";
 
-
+  // perform first algorithm
   std::vector<Vertex> matchingOrder = FirstCSMin(data, query, cs);
   
-  if ( !Backtracking(filename, matchingOrder, data, query, cs, true) ) {
+  // if algorithm should be switched, perform second algorithm
+  if ( !Backtracking(matchingOrder, data, query, cs, true) ) {
     std::cout << "matching algorithm switched"<<std::endl;
     matchingOrder = SecondRIMin(data, query, cs);
-    Backtracking(filename, matchingOrder, data, query, cs, false);
+    Backtracking(matchingOrder, data, query, cs, false);
   }
-  return
+  return;
 }
