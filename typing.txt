@@ -1,0 +1,37 @@
+./main/program lcc_hprd.igraph lcc_hprd_n1.igraph lcc_hprd_n1.cs
+./main/program lcc_hprd.igraph lcc_hprd_n3.igraph lcc_hprd_n3.cs
+./main/program lcc_hprd.igraph lcc_hprd_n5.igraph lcc_hprd_n5.cs
+./main/program lcc_hprd.igraph lcc_hprd_n8.igraph lcc_hprd_n8.cs
+./main/program lcc_hprd.igraph lcc_hprd_s1.igraph lcc_hprd_s1.cs
+./main/program lcc_hprd.igraph lcc_hprd_s3.igraph lcc_hprd_s3.cs
+./main/program lcc_hprd.igraph lcc_hprd_s5.igraph lcc_hprd_s5.cs
+./main/program lcc_hprd.igraph lcc_hprd_s8.igraph lcc_hprd_s8.cs
+./main/program lcc_human.igraph lcc_human_n1.igraph lcc_human_n1.cs
+./main/program lcc_human.igraph lcc_human_n3.igraph lcc_human_n3.cs
+./main/program lcc_human.igraph lcc_human_n5.igraph lcc_human_n5.cs
+./main/program lcc_human.igraph lcc_human_n8.igraph lcc_human_n8.cs
+./main/program lcc_human.igraph lcc_human_s1.igraph lcc_human_s1.cs
+./main/program lcc_human.igraph lcc_human_s3.igraph lcc_human_s3.cs
+./main/program lcc_human.igraph lcc_human_s5.igraph lcc_human_s5.cs
+./main/program lcc_human.igraph lcc_human_s8.igraph lcc_human_s8.cs
+./main/program lcc_yeast.igraph lcc_yeast_n1.igraph lcc_yeast_n1.cs
+./main/program lcc_yeast.igraph lcc_yeast_n3.igraph lcc_yeast_n3.cs
+./main/program lcc_yeast.igraph lcc_yeast_n5.igraph lcc_yeast_n5.cs
+./main/program lcc_yeast.igraph lcc_yeast_n8.igraph lcc_yeast_n8.cs
+./main/program lcc_yeast.igraph lcc_yeast_s1.igraph lcc_yeast_s1.cs
+./main/program lcc_yeast.igraph lcc_yeast_s3.igraph lcc_yeast_s3.cs
+./main/program lcc_yeast.igraph lcc_yeast_s5.igraph lcc_yeast_s5.cs
+./main/program lcc_yeast.igraph lcc_yeast_s8.igraph lcc_yeast_s8.cs
+
+./checker/checker lcc_hprd_n1
+./checker/checker lcc_hprd_n3
+./checker/checker lcc_hprd_n5
+./checker/checker lcc_hprd_n8
+./checker/checker lcc_hprd_s1
+./checker/checker lcc_hprd_s3
+./checker/checker lcc_hprd_s5
+./checker/checker lcc_hprd_s8
+./checker/checker lcc_human_n1
+./checker/checker lcc_human_s1
+./checker/checker lcc_yeast_n1
+./checker/checker lcc_yeast_s1

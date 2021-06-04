@@ -193,5 +193,26 @@ inline bool Graph::IsNeighbor(Vertex u, Vertex v) const {
   return offset >= GetNeighborStartOffset(u, GetLabel(v)) &&
          offset < GetNeighborEndOffset(u, GetLabel(v)) && *it == v;
 }
+class DAG {
+public:
+    size_t parent_count_;
+    Vertex* parent_;
+    size_t children_count_;
+    size_t visted_parent;
+    Vertex* children_;
+public:
+    DAG() {
+        parent_count_ = 0;
+        parent_ = NULL;
+        children_ = NULL;
+        children_count_ = 0;
+        visted_parent = 0;
+    }
+
+    void init(const size_t size) {
+        children_ = new Vertex[size];
+        parent_ = new Vertex[size];
+    }
+};
 
 #endif  // GRAPH_H_
