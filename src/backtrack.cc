@@ -24,7 +24,6 @@ void Backtrack::bfsTraversal(const Graph &query, Vertex root, DAG *&dag) {
         dag[i].init(vertex_num);
     }
 
-    size_t visited_vertex_count = 0;
     bfs_queue.push(root);
     visited[root] = true;
 
@@ -35,7 +34,6 @@ void Backtrack::bfsTraversal(const Graph &query, Vertex root, DAG *&dag) {
         //check neighbors, if not visited, push to queue
         size_t start = query.GetNeighborStartOffset(u);
         size_t end = query.GetNeighborEndOffset(u);
-        size_t maximum = 0;
         std::vector<Vertex> neighborSize(vertex_num, 0);
 
         for (size_t t=start; t<end; t++){
@@ -64,7 +62,7 @@ std::vector<Vertex> Backtrack::FirstCSMin(const Graph &data, const Graph &query,
   size_t min_degree = data.GetNumVertices();
   Vertex root = 0;
 
-  for(Vertex i=0; i<query_vertex_num; i++){
+  for(size_t i=0; i<query_vertex_num; i++){
     if(min_degree > query.GetDegree(i)){
       min_degree = query.GetDegree(i);
       root = i;
@@ -108,7 +106,7 @@ std::vector<Vertex> Backtrack::FirstCSMin(const Graph &data, const Graph &query,
     Vertex max_candidate = extendable_vertex_order[ex_index-1] ;
     size_t max_cs = cs.GetCandidateSize(max_candidate);
     size_t max_index =ex_index-1;
-    for(int j = 0; j < ex_index-1; j++){
+    for(size_t j = 0; j < ex_index-1; j++){
       Vertex can = extendable_vertex_order[j];
       if(max_cs < cs.GetCandidateSize(can) ){
         max_candidate = can;
@@ -265,14 +263,12 @@ std::vector<Vertex> Backtrack::SecondRIMin(const Graph &data, const Graph &query
   * parameter 'first' indicates whether this backtracking uses 
   * matching order of first algorithm 'FirstCSMin'
  */
-
 bool Backtracking(std::vector<Vertex> matchingOrder, const Graph &data, const Graph &query,
                                 const CandidateSet &cs, bool first) {
 
   int32_t query_size = query.GetNumVertices();
   std::vector<Vertex> answer(query_size, 0);
   std::vector<size_t> triedCandidate(query_size, 0);
-  std::vector<bool> occupiedCandidate(data.GetNumVertices(), false);
 
   int j = 0, cnt = 0, j_cnt = 0;
   Vertex current, currCandidate;
@@ -302,19 +298,22 @@ bool Backtracking(std::vector<Vertex> matchingOrder, const Graph &data, const Gr
       triedCandidate[current]++;
       is_answer = true;
       
+      for (int i=0; i<j; i++) {
       // condition 1: check if current candidate is already included in the answer
-      if (!occupiedCandidate[currCandidate]) {
+        if (answer[matchingOrder[i]] == currCandidate){
+          is_answer = false;
+          break;
+        }
 
-        // condition 2: check if every edge in query have corresponding edge in data graph
-        for (int i=0; i<j; i++) {
-          if (query.IsNeighbor(matchingOrder[i], current)) {
-            if (!data.IsNeighbor(answer[matchingOrder[i]], currCandidate)) {
-              is_answer = false;
-              break;
-            }
+      // condition 2: check if every edge in query have corresponding edge in data graph
+
+        if (query.IsNeighbor(matchingOrder[i], current)) {
+          if (!data.IsNeighbor(answer[matchingOrder[i]], currCandidate)) {
+            is_answer = false;
+            break;
           }
         }
-      } else is_answer = false;
+      }
 
       // if both condition 1, 2 are matched, current candidate is selected
       if (is_answer == true) {
@@ -328,7 +327,6 @@ bool Backtracking(std::vector<Vertex> matchingOrder, const Graph &data, const Gr
             std::printf(" %d", answer[k]);
           std::printf("\n");
         } else {
-        occupiedCandidate[currCandidate] = true;
           j++;
         }
         
@@ -337,7 +335,6 @@ bool Backtracking(std::vector<Vertex> matchingOrder, const Graph &data, const Gr
     } else {
       triedCandidate[current] = 0;
       j--;
-      occupiedCandidate[answer[matchingOrder[j]]] = false;
     }
   } 
   return print_started;
@@ -352,7 +349,6 @@ void Backtrack::PrintAllMatches(const Graph &data, const Graph &query,
   
   // if algorithm should be switched, perform second algorithm
   if ( !Backtracking(matchingOrder, data, query, cs, true) ) {
-    std::cout << "matching algorithm switched"<<std::endl;
     matchingOrder = SecondRIMin(data, query, cs);
     Backtracking(matchingOrder, data, query, cs, false);
   }
